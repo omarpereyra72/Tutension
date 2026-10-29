@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TuTensión</title>
+<meta name="theme-color" content="#2563eb">
+<meta name="description" content="Registro de tensión arterial, peso, IMC y análisis clínicos. Tus datos quedan en tu navegador.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+/* ═══════════ TEMAS ═══════════ */
+:root{
+  --bg:#f3f6fb;--card:#ffffff;--ink:#0f172a;--mute:#64748b;--line:#e2e8f0;--soft:#f1f5f9;
+  --brand:#2563eb;--brand-ink:#ffffff;--shadow:0 1px 2px rgba(15,23,42,.06),0 10px 30px rgba(15,23,42,.06);
+}
+[data-theme=dark]{
+  --bg:#0a1020;--card:#121a2d;--ink:#e8eef9;--mute:#93a1b8;--line:#243049;--soft:#18233b;
+  --brand:#60a5fa;--brand-ink:#0a1020;--shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+}
+/* Semáforo */
+.cat-verde{--c:#16a34a}.cat-amarillo{--c:#ca8a04}.cat-naranja{--c:#ea580c}.cat-rojo{--c:#dc2626}.cat-crisis{--c:#b91c1c}
+[data-theme=dark] .cat-verde{--c:#4ade80}[data-theme=dark] .cat-amarillo{--c:#facc15}[data-theme=dark] .cat-naranja{--c:#fb923c}
+[data-theme=dark] .cat-rojo{--c:#f87171}[data-theme=dark] .cat-crisis{--c:#ef4444}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.45;transition:background .2s,color .2s}
+h1,h2,h3{margin:0;line-height:1.2}
+button,input,select,textarea{font:inherit;color:inherit}
+small{color:var(--mute)}
+
+/* ═══════════ LAYOUT ═══════════ */
+#app{min-height:100vh}
+.content{min-width:0}
+.topbar{display:flex;align-items:center;gap:10px;padding:14px 18px;position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px)}
+.topbar .grow{flex:1}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;letter-spacing:-.3px}
+.brand .logo{width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,#ef4444,#2563eb);display:grid;place-items:center;color:#fff}
+.brand .logo svg{width:20px;height:20px}
+.iconbtn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:9px 12px;cursor:pointer;font-weight:600;font-size:13px}
+.iconbtn svg{width:18px;height:18px}
+main{padding:6px 18px 40px;max-width:1180px;margin:0 auto}
+.page{display:none}.page.on{display:block;animation:fade .25s}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.page>h1{font-size:26px;margin:8px 0 16px;letter-spacing:-.4px}
+
+/* Navegación */
+.nav{display:flex;gap:4px;background:var(--card);border:1px solid var(--line)}
+.navbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:10px;border:0;background:transparent;cursor:pointer;color:var(--mute);font-weight:700;border-radius:14px;padding:10px 6px}
+.navbtn svg{width:22px;height:22px;flex:none}
+.navbtn.on{color:var(--brand);background:color-mix(in srgb,var(--brand) 12%,transparent)}
+.nav .brand{display:none}
+
+/* ═══════════ MODO MÓVIL ═══════════ */
+.view-mobile #app{max-width:560px;margin:0 auto}
+.view-mobile .nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:560px;z-index:30;border-radius:22px 22px 0 0;border-bottom:0;padding:8px 8px calc(8px + env(safe-area-inset-bottom));box-shadow:0 -6px 24px rgba(15,23,42,.08)}
+.view-mobile .navbtn{flex-direction:column;gap:3px;font-size:11px;padding:8px 2px}
+.view-mobile .content{padding-bottom:96px}
+.view-mobile main{padding:4px 14px 20px}
+.view-mobile .only-desktop{display:none!important}
+.view-mobile .grid2,.view-mobile .grid3,.view-mobile .split{grid-template-columns:1fr}
+
+/* ═══════════ MODO PC ═══════════ */
+.view-desktop #app{display:grid;grid-template-columns:240px 1fr}
+.view-desktop .nav{position:sticky;top:0;height:100vh;flex-direction:column;justify-content:flex-start;border-width:0 1px 0 0;border-radius:0;padding:22px 14px;gap:6px}
+.view-desktop .nav .brand{display:flex;margin:0 6px 22px}
+.view-desktop .navbtn{flex:none;justify-content:flex-start;padding:12px 14px;font-size:15px}
+.view-desktop .topbar .brand{display:none}
+.view-desktop .only-mobile{display:none!important}
+
+/* ═══════════ COMPONENTES ═══════════ */
+.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:var(--shadow)}
+.card+.card,.stack>*+*{margin-top:16px}
+.card h2{font-size:17px;margin-bottom:12px}
+.card h3{font-size:14px;color:var(--mute);font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.split{display:grid;grid-template-columns:minmax(380px,460px) 1fr;gap:18px;align-items:start}
+.split>.card+.card{margin-top:0}
+.stack{display:flex;flex-direction:column;gap:16px}.stack>*+*{margin-top:0}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.muted{color:var(--mute)}
+.hide{display:none!important}
+
+label.f{display:block;font-size:13px;font-weight:700;color:var(--mute);margin-bottom:5px}
+.in{width:100%;padding:12px 14px;border-radius:14px;border:1.5px solid var(--line);background:var(--soft);outline:none;font-size:16px;transition:border .15s}
+.in:focus{border-color:var(--brand);background:var(--card)}
+textarea.in{resize:vertical;min-height:70px}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+
+.btn{border:0;border-radius:14px;padding:12px 18px;font-weight:700;cursor:pointer;background:var(--soft);color:var(--ink);border:1px solid var(--line)}
+.btn.primary{background:var(--brand);color:var(--brand-ink);border-color:transparent}
+.btn.danger{background:#dc2626;color:#fff;border-color:transparent}
+.btn.sm{padding:7px 12px;font-size:13px;border-radius:10px}
+.btn:disabled{opacity:.6;cursor:wait}
+.seg{display:inline-flex;background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:3px;flex-wrap:wrap}
+.seg button{border:0;background:transparent;padding:8px 14px;border-radius:11px;cursor:pointer;font-weight:700;color:var(--mute)}
+.seg button.on{background:var(--card);color:var(--brand);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.chip{border:1px solid var(--line);background:var(--soft);border-radius:999px;padding:6px 12px;font-size:13px;cursor:pointer;font-weight:600}
+
+.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-weight:700;font-size:13px;color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);border:1px solid color-mix(in srgb,var(--c) 38%,transparent);white-space:nowrap}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--c);display:inline-block}
+
+/* Tomas: pantalla de carga con números grandes */
+.meas{border:2px solid var(--line);border-radius:24px;padding:12px 10px 10px;text-align:center;background:var(--card);transition:border-color .15s}
+.meas[class*=cat-]{border-color:var(--c)}
+.meas+.meas{margin-top:12px}
+.meas-label{font-weight:800;font-size:15px;letter-spacing:1px;text-transform:uppercase}
+.meas-label small{display:block;font-size:12px;font-weight:600;letter-spacing:0;text-transform:none}
+.meas-row{display:flex;align-items:center;justify-content:center;gap:10px;margin:4px 0}
+.meas-val{width:150px;border:0;background:transparent;text-align:center;font-size:76px;font-weight:800;line-height:1.05;outline:none;font-variant-numeric:tabular-nums;color:var(--c,var(--ink));padding:0;min-width:0}
+.meas-unit{font-size:13px;color:var(--mute);font-weight:600;margin-top:-4px}
+.step{width:76px;height:76px;border-radius:50%;border:0;background:var(--soft);font-size:44px;font-weight:700;line-height:1;cursor:pointer;color:var(--ink);touch-action:manipulation;user-select:none;-webkit-user-select:none;flex:none;box-shadow:inset 0 0 0 1.5px var(--line)}
+.step:active{background:var(--brand);color:var(--brand-ink);transform:scale(.96)}
+.meas-quick{display:flex;justify-content:center;gap:10px;margin-top:8px}
+.meas-quick button{border:1px solid var(--line);background:var(--soft);border-radius:999px;padding:8px 18px;font-weight:700;font-size:15px;cursor:pointer;touch-action:manipulation}
+.view-desktop .meas-val{font-size:56px;width:120px}
+.view-desktop .step{width:58px;height:58px;font-size:32px}
+.view-desktop .meas-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.view-desktop .meas+.meas{margin-top:0}
+.view-desktop .split .meas-grid{grid-template-columns:1fr}
+.view-desktop .split .meas+.meas{margin-top:12px}
+
+.preview{margin:14px 0;padding:14px;border-radius:18px;background:color-mix(in srgb,var(--c,var(--mute)) 12%,transparent);border:1.5px solid color-mix(in srgb,var(--c,var(--mute)) 45%,transparent);text-align:center}
+.preview b{display:block;font-size:20px;color:var(--c,var(--ink))}
+.preview span{font-size:14px;color:var(--mute)}
+.save{width:100%;height:76px;border-radius:22px;font-size:22px;font-weight:800;border:0;cursor:pointer;background:var(--brand);color:var(--brand-ink);letter-spacing:.5px;touch-action:manipulation}
+.save:active{transform:scale(.99)}
+.save:disabled{opacity:.6}
+details.fecha{margin:10px 0}
+details.fecha summary{cursor:pointer;font-weight:700;color:var(--brand);padding:8px 0}
+
+/* Estadísticas */
+.stat{background:var(--soft);border:1px solid var(--line);border-radius:18px;padding:14px}
+.stat .k{font-size:12px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:.6px}
+.stat .v{font-size:28px;font-weight:800;margin-top:4px;color:var(--c,var(--ink));font-variant-numeric:tabular-nums}
+.stat .s{font-size:13px;color:var(--mute)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.view-mobile .stats{grid-template-columns:1fr 1fr}
+.lastread{display:flex;align-items:baseline;gap:8px;color:var(--c,var(--ink))}
+.lastread .big{font-size:54px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+.lastread .sl{font-size:30px;opacity:.5}
+.lastread .p{font-size:18px;color:var(--mute);margin-left:6px}
+
+.dist{display:flex;height:16px;border-radius:99px;overflow:hidden;background:var(--soft);margin:10px 0}
+.dist i{display:block;background:var(--c)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:13px;color:var(--mute)}
+
+canvas.chart{width:100%;height:260px;display:block}
+.view-mobile canvas.chart{height:220px}
+
+.tscroll{overflow-x:auto;margin:0 -4px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--mute);padding:8px 10px;border-bottom:1.5px solid var(--line);white-space:nowrap}
+td{padding:10px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr.click{cursor:pointer}tr.click:hover td{background:var(--soft)}
+td.num{font-variant-numeric:tabular-nums;font-weight:700}
+.del{border:0;background:transparent;color:var(--mute);cursor:pointer;padding:6px;border-radius:8px}
+.del:hover{color:#dc2626;background:color-mix(in srgb,#dc2626 12%,transparent)}
+.del svg{width:18px;height:18px}
+.up{color:#dc2626}.down{color:#16a34a}
+
+/* Marcadores clínicos */
+.mgroup{margin-bottom:14px}
+.mrow{display:grid;grid-template-columns:1fr 130px;gap:10px;align-items:center;padding:8px 0;border-bottom:1px dashed var(--line)}
+.mrow .nm{font-weight:700;font-size:14px}.mrow .nm small{display:block;font-weight:500}
+.mrow .in{text-align:right;font-weight:700}
+.mrow .in.cat-verde,.mrow .in.cat-amarillo,.mrow .in.cat-naranja,.mrow .in.cat-rojo{border-color:var(--c);background:color-mix(in srgb,var(--c) 10%,transparent)}
+.mrow .st{grid-column:1/-1;font-size:12px;font-weight:700;color:var(--c)}
+
+/* Modal y toast */
+#modal{position:fixed;inset:0;background:rgba(2,6,23,.62);display:none;align-items:center;justify-content:center;z-index:100;padding:18px}
+#modal.on{display:flex}
+.modal-box{background:var(--card);border-radius:28px;max-width:440px;width:100%;padding:26px 22px 20px;text-align:center;border:3px solid var(--c,var(--line));box-shadow:0 20px 60px rgba(0,0,0,.4);animation:pop .22s}
+.modal-box.cat-crisis{animation:pop .22s,pulse 1.2s infinite}
+@keyframes pop{from{transform:scale(.92);opacity:0}to{transform:none;opacity:1}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--c) 60%,transparent)}50%{box-shadow:0 0 0 14px transparent}}
+.m-icon{width:72px;height:72px;margin:0 auto 10px;border-radius:50%;display:grid;place-items:center;color:#fff;background:var(--c,var(--brand))}
+.m-icon svg{width:38px;height:38px}
+.modal-box h2{font-size:24px;color:var(--c)}
+.m-big{font-size:46px;font-weight:800;margin:8px 0;color:var(--c);font-variant-numeric:tabular-nums}
+.modal-box p{margin:8px 0;font-size:16px}
+.m-btns{display:flex;gap:10px;margin-top:18px}
+.m-btns .btn{flex:1;padding:16px;font-size:17px}
+#toast{position:fixed;left:50%;bottom:104px;transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:13px 20px;border-radius:16px;font-weight:700;opacity:0;pointer-events:none;transition:.25s;z-index:120;max-width:92vw;text-align:center}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+#toast.err{background:#dc2626;color:#fff}
+#toast.ok{background:#16a34a;color:#fff}
+.view-desktop #toast{bottom:30px}
+#loading{position:fixed;inset:0;background:var(--bg);display:grid;place-items:center;z-index:200;font-weight:700;color:var(--mute)}
+.spin{width:38px;height:38px;border-radius:50%;border:4px solid var(--line);border-top-color:var(--brand);animation:sp .8s linear infinite;margin:0 auto 12px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.disclaimer{font-size:12px;color:var(--mute);margin-top:18px;text-align:center}
+
+/* Impresión (reporte a PDF) */
+@media print{
+  body{background:#fff;color:#000}
+  .nav,.topbar,#toast,.no-print,.page:not(#p-reporte){display:none!important}
+  #p-reporte{display:block!important}
+  .view-desktop #app{display:block}
+  .card{box-shadow:none;break-inside:avoid}
+  .content{padding:0!important}
+}
+</style>
+</head>
+<body class="view-mobile">
+<div id="loading"><div><div class="spin"></div>Cargando TuTensión…</div></div>
+
+<div id="app">
+  <nav class="nav" id="nav">
+    <div class="brand"><span class="logo" data-i="heart"></span>TuTensión</div>
+    <button class="navbtn on" data-p="inicio"><span data-i="home"></span><span>Inicio</span></button>
+    <button class="navbtn" data-p="reporte"><span data-i="bars"></span><span>Reporte</span></button>
+    <button class="navbtn" data-p="cuerpo"><span data-i="activity"></span><span>Cuerpo</span></button>
+    <button class="navbtn" data-p="analisis"><span data-i="flask"></span><span>Análisis</span></button>
+    <button class="navbtn" data-p="perfil"><span data-i="user"></span><span>Perfil</span></button>
+  </nav>
+
+  <div class="content">
+    <header class="topbar">
+      <div class="brand only-mobile"><span class="logo" data-i="heart"></span>TuTensión</div>
+      <div class="grow"></div>
+      <button class="iconbtn" id="btnView" title="Cambiar vista"><span data-i="monitor"></span><span id="viewLbl">Auto</span></button>
+      <button class="iconbtn" id="btnTheme" title="Tema claro / oscuro"><span id="themeIco"></span></button>
+    </header>
+
+    <main>
+      <!-- ═══════════ INICIO ═══════════ -->
+      <section class="page on" id="p-inicio">
+        <h1 id="saludo">Hola</h1>
+        <div class="card hide" id="bkBanner" style="margin-bottom:16px;border-color:var(--c);--c:#ca8a04">
+          <div class="row" style="justify-content:space-between">
+            <div><b>💾 Hacé una copia de seguridad</b><br><small>Tus datos viven solo en este navegador. Exportá un archivo para no perderlos.</small></div>
+            <button class="btn primary" id="bkNow">Exportar ahora</button>
+          </div>
+        </div>
+        <div class="split">
+          <div class="card" id="cardToma">
+            <h2>Nueva toma</h2>
+            <div class="meas-grid">
+              <div class="meas" id="mMax"></div>
+              <div class="meas" id="mMin"></div>
+              <div class="meas" id="mPul"></div>
+            </div>
+            <div class="preview" id="preview"></div>
+            <details class="fecha">
+              <summary>🕒 Fecha y hora: <span id="fechaLbl">ahora</span> (tocá para cambiar)</summary>
+              <input class="in" type="datetime-local" id="fFecha">
+            </details>
+            <label class="f">Nota (opcional)</label>
+            <input class="in" id="fNota" maxlength="200" placeholder="Ej: en ayunas, después de caminar…">
+            <div class="row" style="margin:8px 0 16px">
+              <button class="chip" data-nota="En ayunas">En ayunas</button>
+              <button class="chip" data-nota="Tras medicación">Tras medicación</button>
+              <button class="chip" data-nota="Después de comer">Después de comer</button>
+              <button class="chip" data-nota="Con estrés">Con estrés</button>
+            </div>
+            <button class="save" id="btnGuardar">GUARDAR TOMA</button>
+          </div>
+
+          <div class="stack">
+            <div class="card" id="cardUltima"></div>
+            <div class="card">
+              <h3>Últimas tomas</h3>
+              <canvas class="chart" id="chInicio"></canvas>
+              <div class="legend" style="margin-top:8px">
+                <span><span class="dot" style="background:#ef4444"></span> Máxima</span>
+                <span><span class="dot" style="background:#3b82f6"></span> Mínima</span>
+              </div>
+            </div>
+            <div class="card" id="cardCuerpoMini"></div>
+            <div class="card">
+              <h3>Guía de categorías</h3>
+              <div id="guia"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════ REPORTE ═══════════ -->
+      <section class="page" id="p-reporte">
+        <h1>Reporte</h1>
+        <div class="card no-print">
+          <div class="row" style="justify-content:space-between">
+            <div class="seg" id="repModo">
+              <button data-m="mes" class="on">Mes</button>
+              <button data-m="anio">Año</button>
+              <button data-m="rango">Desde–Hasta</button>
+              <button data-m="todo">Todo</button>
+            </div>
+            <div class="row">
+              <button class="btn sm" id="btnCsv">⬇ CSV</button>
+              <button class="btn sm primary" id="btnPrint">🖨 Imprimir / PDF</button>
+            </div>
+          </div>
+          <div class="fgrid" style="margin-top:14px">
+            <div id="gAnio"><label class="f">Año</label><select class="in" id="rAnio"></select></div>
+            <div id="gMes"><label class="f">Mes</label><select class="in" id="rMes"></select></div>
+            <div id="gDesde" class="hide"><label class="f">Desde</label><input class="in" type="date" id="rDesde"></div>
+            <div id="gHasta" class="hide"><label class="f">Hasta</label><input class="in" type="date" id="rHasta"></div>
+          </div>
+        </div>
+        <div id="repOut" style="margin-top:16px"></div>
+      </section>
+
+      <!-- ═══════════ CUERPO ═══════════ -->
+      <section class="page" id="p-cuerpo">
+        <h1>Peso e IMC</h1>
+        <div class="split">
+          <div class="card">
+            <h2>Nuevo registro</h2>
+            <div class="meas" id="mPeso"></div>
+            <div class="fgrid" style="margin-top:14px">
+              <div><label class="f">Fecha</label><input class="in" type="date" id="cFecha"></div>
+              <div><label class="f">Altura (cm)</label><input class="in" id="cAltura" inputmode="decimal" placeholder="170"></div>
+              <div><label class="f">Cintura (cm)</label><input class="in" id="cCintura" inputmode="decimal" placeholder="opcional"></div>
+              <div><label class="f">% Grasa</label><input class="in" id="cGrasa" inputmode="decimal" placeholder="opcional"></div>
+              <div><label class="f">% Músculo</label><input class="in" id="cMusculo" inputmode="decimal" placeholder="opcional"></div>
+            </div>
+            <label class="f" style="margin-top:12px">Nota (opcional)</label>
+            <input class="in" id="cNota" maxlength="200">
+            <button class="save" id="btnCuerpo" style="margin-top:16px">GUARDAR REGISTRO</button>
+          </div>
+          <div class="stack" id="cuerpoOut"></div>
+        </div>
+      </section>
+
+      <!-- ═══════════ ANÁLISIS ═══════════ -->
+      <section class="page" id="p-analisis">
+        <h1>Análisis clínicos</h1>
+        <div class="split">
+          <div class="card">
+            <h2>Cargar resultados</h2>
+            <label class="f">Fecha del análisis</label>
+            <input class="in" type="date" id="aFecha">
+            <p class="muted" style="font-size:13px">Completá solo los que tengas. Los colores comparan con valores de referencia orientativos: tu laboratorio puede informar rangos distintos.</p>
+            <div id="aForm"></div>
+            <div id="aExtras"></div>
+            <button class="btn sm" id="btnExtra" style="margin:10px 0">＋ Agregar otro marcador</button>
+            <label class="f">Nota (opcional)</label>
+            <input class="in" id="aNota" maxlength="200">
+            <button class="save" id="btnAnalisis" style="margin-top:16px">GUARDAR RESULTADOS</button>
+          </div>
+          <div class="stack" id="analisisOut"></div>
+        </div>
+      </section>
+
+      <!-- ═══════════ PERFIL ═══════════ -->
+      <section class="page" id="p-perfil">
+        <h1>Mi perfil</h1>
+        <div class="grid2" style="align-items:start">
+          <div class="card">
+            <h2>Datos personales</h2>
+            <div class="fgrid">
+              <div style="grid-column:1/-1"><label class="f">Nombre</label><input class="in" id="pNombre"></div>
+              <div><label class="f">Fecha de nacimiento</label><input class="in" type="date" id="pNac"></div>
+              <div><label class="f">Edad</label><input class="in" id="pEdad" disabled></div>
+              <div><label class="f">Sexo</label>
+                <select class="in" id="pSexo"><option value="">—</option><option value="F">Femenino</option><option value="M">Masculino</option></select></div>
+              <div><label class="f">Altura (cm)</label><input class="in" id="pAltura" inputmode="decimal"></div>
+              <div><label class="f">Peso objetivo (kg)</label><input class="in" id="pObj" inputmode="decimal"></div>
+              <div style="grid-column:1/-1"><label class="f">Médico de cabecera</label><input class="in" id="pMedico"></div>
+              <div style="grid-column:1/-1"><label class="f">Medicación actual</label><textarea class="in" id="pMed"></textarea></div>
+              <div style="grid-column:1/-1"><label class="f">Antecedentes / notas</label><textarea class="in" id="pNotas"></textarea></div>
+            </div>
+            <button class="btn primary" id="btnPerfil" style="margin-top:14px;width:100%;padding:16px">Guardar perfil</button>
+          </div>
+          <div class="stack">
+            <div class="card">
+              <h2>Apariencia</h2>
+              <label class="f">Tema</label>
+              <div class="seg" id="segTema"><button data-v="light">☀ Claro</button><button data-v="dark">🌙 Oscuro</button></div>
+              <label class="f" style="margin-top:14px">Pantalla</label>
+              <div class="seg" id="segVista"><button data-v="auto">Auto</button><button data-v="mobile">📱 Celular</button><button data-v="desktop">🖥 PC</button></div>
+            </div>
+            <div class="card">
+              <h3>Guía de categorías (AHA)</h3>
+              <div id="guia2"></div>
+            </div>
+            <div class="card">
+              <h2>Mis datos</h2>
+              <p class="muted" style="font-size:14px;margin-top:-4px">Se guardan <b>solo en este navegador</b>, en este dispositivo. Si borrás los datos del sitio o cambiás de celular/PC se pierden: exportá una copia de vez en cuando e importala donde la necesites.</p>
+              <div id="datosInfo" class="stat" style="margin:10px 0"></div>
+              <div class="row">
+                <button class="btn primary" id="btnExp">⬇ Exportar copia (JSON)</button>
+                <button class="btn" id="btnImp">⬆ Importar copia</button>
+                <button class="btn danger" id="btnBorrar">Borrar todo</button>
+              </div>
+              <input type="file" id="fileImp" accept=".json,application/json" class="hide">
+            </div>
+            <p class="disclaimer">TuTensión es una herramienta de registro y orientación. No reemplaza la consulta médica ni sirve para diagnosticar. Ante síntomas o dudas, consultá a tu médico.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<div id="modal"><div class="modal-box" id="modalBox"></div></div>
+<div id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   TUTENSION · Frontend
+   Secciones: 1 Config/Reglas · 2 Utilidades · 3 UI base · 4 Inicio
+              5 Reporte · 6 Cuerpo · 7 Análisis · 8 Perfil · 9 Arranque
+   ═══════════════════════════════════════════════════════════ */
+
+/* ───────── 1. CONFIG Y REGLAS CLÍNICAS ───────── */
+/* Categorías según la tabla de la captura (AHA). Crisis: se activa con sistólica >180 O diastólica >120. */
+const CATS=[
+ {css:'verde',   nombre:'Normal',                rango:'Menos de 120 y menos de 80', msg:'Tu presión está en rango normal. ¡Seguí así!'},
+ {css:'amarillo',nombre:'Elevada',               rango:'120–129 y menos de 80',      msg:'Presión elevada. Cuidá la sal, el movimiento y el peso, y seguí controlándote.'},
+ {css:'naranja', nombre:'Hipertensión grado 1',  rango:'130–139 ó 80–89',            msg:'Hipertensión grado 1. Conviene consultarlo con tu médico y repetir la medición en reposo.'},
+ {css:'rojo',    nombre:'Hipertensión grado 2',  rango:'140 o más ó 90 o más',       msg:'Hipertensión grado 2. Contactá a tu médico pronto para evaluar tratamiento.'},
+ {css:'crisis',  nombre:'Crisis hipertensiva',   rango:'Mayor de 180 y/o mayor de 120', msg:'Descansá 5 minutos y volvé a medir. Si sigue así, o si tenés dolor de pecho, falta de aire, dolor de cabeza intenso, confusión o debilidad, buscá atención médica de inmediato (SAME 107 / 911).'}
+];
+const sysLevel=s=>s>180?4:s>=140?3:s>=130?2:s>=120?1:0;
+const diaLevel=d=>d>120?4:d>=90?3:d>=80?2:0;
+const clasificarPA=(s,d)=>CATS[Math.max(sysLevel(s),diaLevel(d))];
+const pulLevel=p=>(p>=60&&p<=100)?0:(p<40||p>130)?2:1;   // pulso en reposo 60–100
+const catIMC=v=>v<18.5?{css:'amarillo',n:'Bajo peso'}:v<25?{css:'verde',n:'Peso normal'}:v<30?{css:'amarillo',n:'Sobrepeso'}:v<35?{css:'naranja',n:'Obesidad grado I'}:v<40?{css:'rojo',n:'Obesidad grado II'}:{css:'rojo',n:'Obesidad grado III'};
+function riesgoCintura(c,sexo){ if(!c||!sexo) return null; const t=sexo==='M'?[94,102]:[80,88]; return c>=t[1]?{css:'rojo',n:'Riesgo alto'}:c>=t[0]?{css:'amarillo',n:'Riesgo aumentado'}:{css:'verde',n:'Sin riesgo'}; }
+function estadoMarcador(m,v){
+  if(!m||isNaN(v)) return null;
+  let dev=0,dir='ok';
+  if(m.min!=null&&v<m.min){dev=(m.min-v)/(m.min||1);dir='bajo'}
+  else if(m.max!=null&&v>m.max){dev=(v-m.max)/(m.max||1);dir='alto'}
+  if(dir==='ok') return {css:'verde',n:'En rango',dir};
+  const css=dev<=0.10?'amarillo':dev<=0.30?'naranja':'rojo';
+  return {css,n:(dir==='alto'?'Alto':'Bajo'),dir};
+}
+const COLORS={verde:['#16a34a','#4ade80'],amarillo:['#ca8a04','#facc15'],naranja:['#ea580c','#fb923c'],rojo:['#dc2626','#f87171'],crisis:['#b91c1c','#ef4444']};
+const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+/* ───────── 2. UTILIDADES ───────── */
+const S={perfil:{},muestras:[],cuerpo:[],analisis:[],marcadores:[]};
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const pad=n=>String(n).padStart(2,'0');
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const hoyStr=()=>{const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`};
+const ahoraInput=()=>{const d=new Date();return `${hoyStr()}T${pad(d.getHours())}:${pad(d.getMinutes())}`};
+const fmtF=(s,hora=true)=>{if(!s)return '';const [d,t]=s.split(' ');const [y,m,dd]=d.split('-');return `${dd}/${m}/${y}`+(hora&&t&&t!=='00:00'?' '+t:'')};
+const fmtCorta=s=>{const [y,m,d]=s.slice(0,10).split('-');return `${d}/${m}`};
+const nf=(v,d=0)=>Number(v).toLocaleString('es-AR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const nfa=v=>Number(v).toLocaleString('es-AR',{maximumFractionDigits:2});
+const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+const errMsg=e=>(e&&e.message)?e.message.replace(/^Error:\s*/,''):String(e);
+const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
+const lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
+const catColor=css=>COLORS[css][document.documentElement.dataset.theme==='dark'?1:0];
+function edadDe(nac){ if(!nac) return null; const n=new Date(nac+'T00:00:00'),h=new Date(); let e=h.getFullYear()-n.getFullYear(); if(h<new Date(h.getFullYear(),n.getMonth(),n.getDate())) e--; return e>=0&&e<130?e:null; }
+/* ───────── ALMACENAMIENTO LOCAL (localStorage) · reemplaza al backend de Apps Script ───────── */
+const MARCADORES=[
+  // ── Sangre ──
+  { id: 'glucemia',   grupo: 'Sangre', nombre: 'Glucemia en ayunas',                unidad: 'mg/dL',  min: 70,  max: 99,   nota: '100–125 prediabetes · ≥126 compatible con diabetes' },
+  { id: 'hba1c',      grupo: 'Sangre', nombre: 'Hemoglobina glicosilada (HbA1c)',   unidad: '%',      min: 4,   max: 5.6,  nota: '5,7–6,4 prediabetes · ≥6,5 diabetes' },
+  { id: 'insulina',   grupo: 'Sangre', nombre: 'Insulina basal',                    unidad: 'µU/mL',  min: 2,   max: 25,   nota: 'Útil para evaluar resistencia a la insulina' },
+  { id: 'colesterol', grupo: 'Sangre', nombre: 'Colesterol total',                  unidad: 'mg/dL',  min: 0,   max: 199 },
+  { id: 'ldl',        grupo: 'Sangre', nombre: 'Colesterol LDL',                    unidad: 'mg/dL',  min: 0,   max: 129,  nota: 'Óptimo <100' },
+  { id: 'hdl',        grupo: 'Sangre', nombre: 'Colesterol HDL',                    unidad: 'mg/dL',  min: 40,  max: null, nota: 'Deseable >40 (hombres) / >50 (mujeres)' },
+  { id: 'trigliceridos', grupo: 'Sangre', nombre: 'Triglicéridos',                  unidad: 'mg/dL',  min: 0,   max: 149 },
+  { id: 'creatinina', grupo: 'Sangre', nombre: 'Creatinina',                        unidad: 'mg/dL',  min: 0.6, max: 1.3 },
+  { id: 'urea',       grupo: 'Sangre', nombre: 'Urea',                              unidad: 'mg/dL',  min: 15,  max: 45 },
+  { id: 'acido_urico', grupo: 'Sangre', nombre: 'Ácido úrico',                      unidad: 'mg/dL',  min: 3.5, max: 7.2 },
+  { id: 'tgo',        grupo: 'Sangre', nombre: 'TGO (AST)',                         unidad: 'U/L',    min: 0,   max: 40 },
+  { id: 'tgp',        grupo: 'Sangre', nombre: 'TGP (ALT)',                         unidad: 'U/L',    min: 0,   max: 41 },
+  { id: 'tsh',        grupo: 'Sangre', nombre: 'TSH',                               unidad: 'µUI/mL', min: 0.4, max: 4.0 },
+  { id: 'sodio',      grupo: 'Sangre', nombre: 'Sodio',                             unidad: 'mEq/L',  min: 135, max: 145 },
+  { id: 'potasio',    grupo: 'Sangre', nombre: 'Potasio',                           unidad: 'mEq/L',  min: 3.5, max: 5.1 },
+  { id: 'hemoglobina', grupo: 'Sangre', nombre: 'Hemoglobina',                      unidad: 'g/dL',   min: 12,  max: 17.5 },
+  { id: 'pcr',        grupo: 'Sangre', nombre: 'PCR ultrasensible',                 unidad: 'mg/L',   min: 0,   max: 3,    nota: 'Marcador de inflamación' },
+  { id: 'vitd',       grupo: 'Sangre', nombre: 'Vitamina D (25-OH)',                unidad: 'ng/mL',  min: 30,  max: 100 },
+  // ── Orina ──
+  { id: 'microalb',   grupo: 'Orina',  nombre: 'Microalbuminuria',                  unidad: 'mg/L',   min: 0,   max: 30,   nota: 'Detecta daño renal temprano (diabetes / hipertensión)' },
+  { id: 'rac',        grupo: 'Orina',  nombre: 'Relación albúmina/creatinina',      unidad: 'mg/g',   min: 0,   max: 30 },
+  { id: 'proteinuria', grupo: 'Orina', nombre: 'Proteinuria de 24 h',               unidad: 'mg/24h', min: 0,   max: 150 },
+  { id: 'clearance',  grupo: 'Orina',  nombre: 'Clearance de creatinina',           unidad: 'mL/min', min: 90,  max: null }
+];
+const LS_KEY='tutension.v1';
+let MEM=null;
+const cp=x=>JSON.parse(JSON.stringify(x));
+const txt=(v,n)=>String(v==null?'':v).trim().slice(0,n);
+const porFecha=(a,b)=>a.fecha<b.fecha?-1:a.fecha>b.fecha?1:a.fila-b.fila;
+const ord=a=>cp(a.slice().sort(porFecha));
+const dbVacio=()=>({perfil:{},muestras:[],cuerpo:[],analisis:[],meta:{},seq:0});
+function dbLoad(){
+  if(MEM)return MEM;
+  let d=null;
+  try{const raw=localStorage.getItem(LS_KEY);d=raw?JSON.parse(raw):null}catch(e){d=null}
+  MEM=Object.assign(dbVacio(),(d&&typeof d==='object')?d:{});
+  const T=['muestras','cuerpo','analisis'];let mx=Number(MEM.seq)||0;
+  T.forEach(t=>{if(!Array.isArray(MEM[t]))MEM[t]=[];MEM[t].forEach(r=>{if(r.fila>mx)mx=r.fila})});
+  MEM.seq=mx;
+  T.forEach(t=>MEM[t].forEach(r=>{if(!r.fila)r.fila=++MEM.seq}));
+  return MEM;
+}
+function dbSave(){
+  try{localStorage.setItem(LS_KEY,JSON.stringify(MEM))}
+  catch(e){throw new Error('No se pudo guardar en este navegador (modo privado o almacenamiento lleno). Exportá tus datos.')}
+}
+/* transacción: si falla el guardado, se restaura el estado anterior */
+function tx(fn){const d=dbLoad(),snap=JSON.stringify(d);try{const r=fn(d);dbSave();return r}catch(e){MEM=JSON.parse(snap);throw e}}
+function numV(v,nombre,min,max,opc){
+  if(v===''||v==null){if(opc)return null;throw new Error('Falta el dato: '+nombre+'.')}
+  const n=Number(String(v).replace(',','.'));
+  if(!isFinite(n)||n<min||n>max)throw new Error(nombre+' fuera de rango ('+min+'–'+max+').');
+  return n;
+}
+function fechaV(s,conHora){
+  if(!s)throw new Error('Falta la fecha.');
+  s=String(s);const m=s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?/);
+  if(!m)throw new Error('Fecha inválida: '+s);
+  const dt=new Date(+m[1],+m[2]-1,+m[3]);if(dt.getMonth()!==+m[2]-1)throw new Error('Fecha inválida: '+s);
+  return `${m[1]}-${m[2]}-${m[3]} ${conHora&&m[4]?m[4]+':'+m[5]:'00:00'}`;
+}
+const LOCAL={
+  api_init(){const d=dbLoad();return {app:{NOMBRE:'TuTensión'},perfil:cp(d.perfil),muestras:ord(d.muestras),cuerpo:ord(d.cuerpo),analisis:ord(d.analisis),marcadores:MARCADORES}},
+  api_guardarMuestra(x){return tx(d=>{
+    const fecha=fechaV(x.fecha,true),max=numV(x.max,'Máxima',50,300),min=numV(x.min,'Mínima',30,200);
+    if(min>=max)throw new Error('La mínima debe ser menor que la máxima.');
+    const pul=numV(x.pul,'Pulsaciones',20,250,true);
+    d.muestras.push({fila:++d.seq,fecha,max,min,pul,notas:txt(x.notas,300)});
+    return {muestras:ord(d.muestras)};
+  })},
+  api_guardarCuerpo(x){return tx(d=>{
+    const fecha=fechaV(x.fecha,false),peso=numV(x.peso,'Peso',20,400);
+    const altura=numV(x.altura||d.perfil.altura,'Altura',80,250);
+    const cintura=numV(x.cintura,'Cintura',30,250,true),grasa=numV(x.grasa,'% Grasa',2,80,true),musculo=numV(x.musculo,'% Músculo',5,80,true);
+    const imc=Math.round(peso/Math.pow(altura/100,2)*10)/10;
+    d.cuerpo.push({fila:++d.seq,fecha,peso,altura,imc,cintura,grasa,musculo,notas:txt(x.notas,300)});
+    if(!d.perfil.altura)d.perfil.altura=altura;
+    return {cuerpo:ord(d.cuerpo),perfil:cp(d.perfil)};
+  })},
+  api_guardarAnalisis(x){return tx(d=>{
+    const fecha=fechaV(x.fecha,false);
+    const items=(x.items||[]).filter(i=>i&&i.valor!==''&&i.valor!=null);
+    if(!items.length)throw new Error('Cargá al menos un resultado.');
+    const filas=items.map(i=>{const nombre=txt(i.nombre,80);if(!nombre)throw new Error('Un marcador no tiene nombre.');
+      return {fila:0,fecha,marcador:nombre,valor:numV(i.valor,nombre,-100000,10000000),unidad:txt(i.unidad,20),notas:txt(x.notas,300)}});
+    filas.forEach(f=>{f.fila=++d.seq;d.analisis.push(f)});
+    return {analisis:ord(d.analisis)};
+  })},
+  api_guardarPerfil(x){return tx(d=>{
+    ['nombre','nacimiento','sexo','altura','pesoObjetivo','medico','medicacion','notas'].forEach(k=>{
+      if(x[k]===undefined)return;let v=x[k];
+      if(k==='altura'&&v!=='')v=numV(v,'Altura',80,250);
+      if(k==='pesoObjetivo'&&v!=='')v=numV(v,'Peso objetivo',20,400);
+      if(k==='nacimiento'&&v)fechaV(v,false);
+      d.perfil[k]=typeof v==='number'?v:txt(v,500);
+    });
+    return {perfil:cp(d.perfil)};
+  })},
+  api_eliminar(tipo,fila,clave){return tx(d=>{
+    if(!['muestras','cuerpo','analisis'].includes(tipo))throw new Error('Tipo inválido.');
+    const i=d[tipo].findIndex(r=>r.fila===Number(fila));
+    if(i<0)throw new Error('El registro ya no existe.');
+    d[tipo].splice(i,1);
+    const out={};out[tipo]=ord(d[tipo]);return out;
+  })}
+};
+function api(fn,...args){return new Promise((ok,ko)=>{try{ok(LOCAL[fn](...args))}catch(e){ko(e)}})}
+
+/* Copia de seguridad: exportar / importar (lógica pura) */
+function armarExport(){
+  const d=dbLoad(),sf=a=>a.map(r=>{const o=Object.assign({},r);delete o.fila;return o});
+  return {app:'TuTension',formato:1,exportado:new Date().toISOString(),datos:{perfil:cp(d.perfil),muestras:sf(d.muestras),cuerpo:sf(d.cuerpo),analisis:sf(d.analisis)}};
+}
+function limpiarImport(dat){
+  const o={muestras:[],cuerpo:[],analisis:[],perfil:{},omitidos:0};
+  (dat.muestras||[]).forEach(r=>{try{
+    const fecha=fechaV(r.fecha,true),max=numV(r.max,'',50,300),min=numV(r.min,'',30,200);if(min>=max)throw 0;
+    o.muestras.push({fecha,max,min,pul:numV(r.pul,'',20,250,true),notas:txt(r.notas,300)});
+  }catch(e){o.omitidos++}});
+  (dat.cuerpo||[]).forEach(r=>{try{
+    const fecha=fechaV(r.fecha,false),peso=numV(r.peso,'',20,400),altura=numV(r.altura,'',80,250,true);
+    o.cuerpo.push({fecha,peso,altura,imc:altura?Math.round(peso/Math.pow(altura/100,2)*10)/10:null,cintura:numV(r.cintura,'',30,250,true),grasa:numV(r.grasa,'',2,80,true),musculo:numV(r.musculo,'',5,80,true),notas:txt(r.notas,300)});
+  }catch(e){o.omitidos++}});
+  (dat.analisis||[]).forEach(r=>{try{
+    const marcador=txt(r.marcador,80);if(!marcador)throw 0;
+    o.analisis.push({fecha:fechaV(r.fecha,false),marcador,valor:numV(r.valor,'',-100000,10000000),unidad:txt(r.unidad,20),notas:txt(r.notas,300)});
+  }catch(e){o.omitidos++}});
+  const p=dat.perfil||{};
+  ['nombre','nacimiento','sexo','altura','pesoObjetivo','medico','medicacion','notas'].forEach(k=>{if(p[k]!==undefined&&p[k]!==null&&p[k]!=='')o.perfil[k]=typeof p[k]==='number'?p[k]:txt(p[k],500)});
+  return o;
+}
+function aplicarImport(imp,modo){return tx(d=>{
+  if(modo==='replace'){d.muestras=[];d.cuerpo=[];d.analisis=[];d.perfil=Object.assign({},imp.perfil)}
+  else Object.keys(imp.perfil).forEach(k=>{if(d.perfil[k]===undefined||d.perfil[k]==='')d.perfil[k]=imp.perfil[k]});
+  const K={muestras:r=>[r.fecha,r.max,r.min,r.pul].join('|'),cuerpo:r=>[r.fecha,r.peso].join('|'),analisis:r=>[r.fecha,r.marcador,r.valor].join('|')};
+  let nuevos=0;
+  ['muestras','cuerpo','analisis'].forEach(t=>{const have=new Set(d[t].map(K[t]));
+    imp[t].forEach(r=>{const k=K[t](r);if(have.has(k))return;have.add(k);d[t].push(Object.assign({fila:++d.seq},r));nuevos++})});
+  return nuevos;
+})}
+
+/* Iconos (trazos tipo feather) */
+const P={
+ home:'<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+ bars:'<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
+ activity:'<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
+ flask:'<path d="M9 3h6M10 3v6L4 19a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3l-6-10V3"/>',
+ user:'<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+ sun:'<circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/>',
+ moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+ monitor:'<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>',
+ phone:'<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/>',
+ heart:'<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/>',
+ check:'<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
+ alert:'<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+ octagon:'<polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+ trash:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>'
+};
+const ICON=n=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${P[n]||''}</svg>`;
+const iconCat=css=>css==='verde'?'check':css==='crisis'?'octagon':'alert';
+
+/* Gráfico de líneas (canvas, sin librerías) */
+function lineChart(cv,o){
+  if(!cv) return;
+  const dpr=window.devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;
+  if(!w||!h) return;
+  cv.width=w*dpr;cv.height=h*dpr;
+  const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);
+  const dark=document.documentElement.dataset.theme==='dark';
+  const grid=dark?'#243049':'#e2e8f0',txt=dark?'#93a1b8':'#64748b';
+  const n=o.labels.length;
+  if(!n){c.fillStyle=txt;c.font='14px sans-serif';c.textAlign='center';c.fillText('Sin datos para graficar',w/2,h/2);return;}
+  const vals=[];o.series.forEach(s=>s.data.forEach(v=>{if(v!=null&&isFinite(v))vals.push(v)}));
+  let lo=Math.min(...vals,...(o.include||[])),hi=Math.max(...vals,...(o.include||[]));
+  if(hi-lo<1){hi+=1;lo-=1}
+  const padv=(hi-lo)*0.08;lo-=padv;hi+=padv;
+  const L=42,R=o.refs&&o.refs.length?8:8,T=10,B=26,pw=w-L-R,ph=h-T-B;
+  const X=i=>L+(n===1?pw/2:pw*i/(n-1)),Y=v=>T+ph*(1-(v-lo)/(hi-lo));
+  c.font='11px sans-serif';c.textAlign='right';c.textBaseline='middle';
+  for(let k=0;k<=4;k++){const v=lo+(hi-lo)*k/4,y=Y(v);c.strokeStyle=grid;c.lineWidth=1;c.beginPath();c.moveTo(L,y);c.lineTo(w-R,y);c.stroke();c.fillStyle=txt;c.fillText(nf(v,o.dec||0),L-6,y);}
+  (o.refs||[]).forEach(r=>{const y=Y(r.y);c.setLineDash([5,4]);c.strokeStyle=r.color;c.lineWidth=1.3;c.beginPath();c.moveTo(L,y);c.lineTo(w-R,y);c.stroke();c.setLineDash([]);});
+  c.textAlign='center';c.textBaseline='top';c.fillStyle=txt;
+  const idx=n<=3?[...Array(n).keys()]:[0,Math.floor((n-1)/2),n-1];
+  idx.forEach(i=>{c.textAlign=i===0?'left':i===n-1?'right':'center';c.fillText(o.labels[i],X(i),h-B+8)});
+  o.series.forEach(s=>{
+    c.strokeStyle=s.color;c.lineWidth=2.4;c.lineJoin='round';c.beginPath();let st=false;
+    s.data.forEach((v,i)=>{if(v==null)return;const x=X(i),y=Y(v);if(!st){c.moveTo(x,y);st=true}else c.lineTo(x,y)});c.stroke();
+    const rad=n>60?0:n>30?2.5:4;
+    if(rad)s.data.forEach((v,i)=>{if(v==null)return;c.fillStyle=(s.pc&&s.pc[i])||s.color;c.beginPath();c.arc(X(i),Y(v),rad,0,7);c.fill()});
+  });
+}
+
+/* ───────── 3. UI BASE ───────── */
+function toast(msg,kind){const t=$('#toast');t.textContent=msg;t.className='on '+(kind||'');clearTimeout(toast._t);toast._t=setTimeout(()=>t.className='',3200);}
+function openModal(o){
+  return new Promise(res=>{
+    const m=$('#modal'),box=$('#modalBox');
+    box.className='modal-box cat-'+(o.css||'verde');
+    box.innerHTML=`<div class="m-icon">${ICON(o.icon||'check')}</div><h2>${esc(o.title)}</h2>${o.big?`<div class="m-big">${o.big}</div>`:''}${(o.lines||[]).map(l=>`<p>${l}</p>`).join('')}<div class="m-btns"></div>`;
+    const bx=$('.m-btns',box);
+    (o.buttons||[{t:'Entendido',v:true,cls:'primary'}]).forEach(b=>{
+      const el=document.createElement('button');el.className='btn '+(b.cls||'');el.textContent=b.t;
+      el.onclick=()=>{m.classList.remove('on');res(b.v)};bx.appendChild(el);
+    });
+    m.classList.add('on');
+  });
+}
+function paintIcons(){$$('[data-i]').forEach(e=>{e.innerHTML=ICON(e.dataset.i)});}
+
+/* Tema */
+function applyTheme(t){document.documentElement.dataset.theme=t;lsSet('tt_theme',t);$('#themeIco').innerHTML=ICON(t==='dark'?'sun':'moon');$$('#segTema button').forEach(b=>b.classList.toggle('on',b.dataset.v===t));renderActual();}
+/* Vista: móvil / PC / auto */
+let vistaPref='auto';
+function applyView(){
+  const mob=vistaPref==='mobile'||(vistaPref==='auto'&&window.innerWidth<900);
+  document.body.classList.toggle('view-mobile',mob);document.body.classList.toggle('view-desktop',!mob);
+  $('#viewLbl').textContent=vistaPref==='auto'?'Auto':vistaPref==='mobile'?'Celular':'PC';
+  $$('#segVista button').forEach(b=>b.classList.toggle('on',b.dataset.v===vistaPref));
+  renderActual();
+}
+function setVista(v){vistaPref=v;lsSet('tt_view',v);applyView();}
+
+/* Navegación */
+let pagina='inicio';
+function go(p){
+  pagina=p;
+  $$('.page').forEach(e=>e.classList.toggle('on',e.id==='p-'+p));
+  $$('.navbtn').forEach(b=>b.classList.toggle('on',b.dataset.p===p));
+  window.scrollTo(0,0);renderActual();
+}
+function renderActual(){
+  if(!S.marcadores||!$('#p-inicio'))return;
+  ({inicio:renderInicio,reporte:renderReporte,cuerpo:renderCuerpo,analisis:renderAnalisis,perfil:renderPerfil}[pagina]||(()=>{}))();
+}
+function refrescarTodo(){renderActual();}
+
+async function eliminar(tipo,fila,clave,desc){
+  const ok=await openModal({css:'rojo',icon:'trash',title:'¿Eliminar registro?',lines:[esc(desc)],buttons:[{t:'Cancelar',v:false},{t:'Eliminar',v:true,cls:'danger'}]});
+  if(!ok)return;
+  try{const r=await api('api_eliminar',tipo,fila,clave);S[tipo]=r[tipo];refrescarTodo();toast('Registro eliminado','ok');}
+  catch(e){toast(errMsg(e),'err');}
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-del]');if(!b)return;
+  const [tipo,fila,clave]=b.dataset.del.split('|');eliminar(tipo,fila,clave,b.dataset.desc||'Esta acción no se puede deshacer.');
+});
+
+/* Stepper de números grandes */
+function buildStepper(host,cfg){
+  host.innerHTML=`<div class="meas-label">${cfg.label}<small>${cfg.sub||''}</small></div>
+   <div class="meas-row">
+     <button type="button" class="step" data-d="-1" aria-label="Restar">−</button>
+     <input class="meas-val" type="text" inputmode="${cfg.dec?'decimal':'numeric'}" autocomplete="off" aria-label="${cfg.label}">
+     <button type="button" class="step" data-d="1" aria-label="Sumar">+</button>
+   </div>
+   <div class="meas-unit">${cfg.unit}</div>
+   <div class="meas-quick">${cfg.quick.map(q=>`<button type="button" data-q="${q}">${q>0?'+':'−'}${Math.abs(q)}</button>`).join('')}</div>`;
+  const inp=$('input',host);
+  const st={el:inp,host,onchange:null,
+    get(){const v=parseFloat(String(inp.value).replace(',','.'));return isNaN(v)?null:v},
+    set(v){inp.value=cfg.dec?Number(v).toFixed(cfg.dec).replace('.',','):String(Math.round(v));if(st.onchange)st.onchange(st.get())}};
+  const clamp=v=>Math.min(cfg.max,Math.max(cfg.min,v));
+  const bump=k=>{const cur=st.get();const base=cur==null?cfg.def:cur;st.set(clamp(+(base+k*cfg.step).toFixed(2)))};
+  $$('.step',host).forEach(b=>{
+    let t1,t2;const k=+b.dataset.d;
+    const stop=()=>{clearTimeout(t1);clearInterval(t2)};
+    b.addEventListener('pointerdown',e=>{e.preventDefault();bump(k);t1=setTimeout(()=>{t2=setInterval(()=>bump(k),90)},420)});
+    ['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,stop));
+    b.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();bump(k)}});
+    b.addEventListener('contextmenu',e=>e.preventDefault());
+  });
+  $$('[data-q]',host).forEach(b=>b.onclick=()=>bump(+b.dataset.q/cfg.step));
+  inp.addEventListener('input',()=>{if(st.onchange)st.onchange(st.get())});
+  inp.addEventListener('focus',()=>inp.select());
+  inp.addEventListener('blur',()=>{const v=st.get();if(v!=null)st.set(clamp(v))});
+  return st;
+}
+
+/* ───────── 4. INICIO ───────── */
+let stS,stD,stP,stPeso;
+function initToma(){
+  stS=buildStepper($('#mMax'),{label:'Máxima',sub:'Sistólica · la alta',unit:'mmHg',min:60,max:260,step:1,def:120,quick:[-10,10]});
+  stD=buildStepper($('#mMin'),{label:'Mínima',sub:'Diastólica · la baja',unit:'mmHg',min:30,max:160,step:1,def:80,quick:[-10,10]});
+  stP=buildStepper($('#mPul'),{label:'Pulsaciones',sub:'Latidos por minuto',unit:'ppm',min:30,max:220,step:1,def:70,quick:[-10,10]});
+  stS.onchange=stD.onchange=stP.onchange=previewPA;
+  const u=S.muestras[S.muestras.length-1];
+  stS.set(u?u.max:120);stD.set(u?u.min:80);stP.set(u&&u.pul?u.pul:70);
+  $('#fFecha').value=ahoraInput();
+  $('#fFecha').addEventListener('input',()=>{$('#fechaLbl').textContent=$('#fFecha').value?fmtF($('#fFecha').value.replace('T',' '),true):'ahora'});
+  $$('[data-nota]').forEach(b=>b.onclick=()=>{const i=$('#fNota');const t=b.dataset.nota;if(!i.value.includes(t))i.value=(i.value?i.value+' · ':'')+t});
+  $('#btnGuardar').onclick=guardarToma;
+}
+function previewPA(){
+  const s=stS.get(),d=stD.get(),p=stP.get(),pv=$('#preview');
+  if(s!=null)stS.host.className='meas cat-'+CATS[sysLevel(s)].css;
+  if(d!=null)stD.host.className='meas cat-'+CATS[diaLevel(d)].css;
+  if(p!=null)stP.host.className='meas cat-'+CATS[pulLevel(p)].css;
+  if(s==null||d==null){pv.className='preview';pv.innerHTML='<span>Ingresá máxima y mínima</span>';return;}
+  const c=clasificarPA(s,d);
+  pv.className='preview cat-'+c.css;
+  pv.innerHTML=`<b>${c.nombre}</b><span>${s}/${d} mmHg · ${c.rango}</span>`;
+}
+async function guardarToma(){
+  const s=stS.get(),d=stD.get(),p=stP.get();
+  if(s==null||d==null)return toast('Ingresá máxima y mínima','err');
+  if(d>=s)return toast('La mínima debe ser menor que la máxima','err');
+  const btn=$('#btnGuardar');btn.disabled=true;btn.textContent='Guardando…';
+  const fecha=$('#fFecha').value||ahoraInput();
+  try{
+    const r=await api('api_guardarMuestra',{fecha,max:s,min:d,pul:p,notas:$('#fNota').value});
+    S.muestras=r.muestras;$('#fNota').value='';$('#fFecha').value=ahoraInput();$('#fechaLbl').textContent='ahora';
+    renderInicio();
+    await alertaToma(s,d,p);
+  }catch(e){toast(errMsg(e),'err');}
+  finally{btn.disabled=false;btn.textContent='GUARDAR TOMA';}
+}
+async function alertaToma(s,d,p){
+  const c=clasificarPA(s,d),lv=Math.max(sysLevel(s),diaLevel(d)),pl=p!=null?pulLevel(p):0;
+  const lines=[];
+  if(pl>0)lines.push(`Pulso fuera del rango habitual en reposo (60–100): <b>${p} ppm</b>.`);
+  if(lv===0&&pl===0){toast(`✔ Guardado · ${s}/${d} · Normal`,'ok');return;}
+  const nivel=Math.max(lv,pl);
+  const cat=CATS[nivel];
+  const css=lv>=pl?c.css:cat.css;
+  await openModal({css,icon:iconCat(css),title:lv>0?c.nombre:'Pulso fuera de rango',big:`${s}/${d}`,lines:[lv>0?esc(c.msg):'La presión está dentro de lo normal.',...lines,'<small>Toma guardada correctamente.</small>']});
+}
+function renderInicio(){
+  const nombre=(S.perfil.nombre||'').split(' ')[0];
+  const h=new Date().getHours();
+  $('#saludo').textContent=(h<6?'Buenas noches':h<13?'Buen día':h<20?'Buenas tardes':'Buenas noches')+(nombre?', '+nombre:'');
+  const arr=S.muestras,u=arr[arr.length-1];
+  const hoy=new Date(),h7=new Date(hoy.getTime()-7*864e5);
+  const ds=x=>`${x.getFullYear()}-${pad(x.getMonth()+1)}-${pad(x.getDate())}`;
+  const ult7=arr.filter(m=>m.fecha.slice(0,10)>=ds(h7));
+  const ult30=arr.filter(m=>m.fecha.slice(0,10)>=ds(new Date(hoy.getTime()-30*864e5)));
+  let html='<h3>Última toma</h3>';
+  if(u){
+    const c=clasificarPA(u.max,u.min);
+    html+=`<div class="cat-${c.css}"><div class="lastread"><span class="big">${u.max}</span><span class="sl">/</span><span class="big">${u.min}</span>${u.pul?`<span class="p">♥ ${u.pul}</span>`:''}</div>
+    <div class="row" style="margin-top:10px"><span class="badge"><i class="dot"></i>${c.nombre}</span><small>${fmtF(u.fecha)}</small></div></div>`;
+    if(ult7.length>1){const a=Math.round(avg(ult7.map(m=>m.max))),b=Math.round(avg(ult7.map(m=>m.min))),cc=clasificarPA(a,b);
+      html+=`<div class="stat cat-${cc.css}" style="margin-top:14px"><div class="k">Promedio 7 días (${ult7.length} tomas)</div><div class="v">${a}/${b}</div><div class="s">${cc.nombre}</div></div>`;}
+    if(ult30.length){html+=`<div style="margin-top:14px"><div class="k muted" style="font-size:12px;font-weight:700">ÚLTIMOS 30 DÍAS</div>${distHTML(ult30)}</div>`;}
+  }else html+='<p class="muted">Todavía no registraste tomas. Cargá la primera con el botón grande.</p>';
+  $('#cardUltima').innerHTML=html;
+  const last=arr.slice(-20);
+  lineChart($('#chInicio'),{labels:last.map(m=>fmtCorta(m.fecha)),series:[
+    {color:'#ef4444',data:last.map(m=>m.max),pc:last.map(m=>catColor(CATS[sysLevel(m.max)].css))},
+    {color:'#3b82f6',data:last.map(m=>m.min),pc:last.map(m=>catColor(CATS[diaLevel(m.min)].css))}],
+    refs:[{y:120,color:'#ca8a04'},{y:80,color:'#ca8a04'}],include:[60,130]});
+  const cu=S.cuerpo[S.cuerpo.length-1];
+  if(cu){const imc=cu.imc||calcIMC(cu.peso,cu.altura||S.perfil.altura);const ci=imc?catIMC(imc):null;
+    $('#cardCuerpoMini').innerHTML=`<h3>Peso actual</h3><div class="row" style="justify-content:space-between"><div class="lastread"><span class="big" style="font-size:40px">${nf(cu.peso,1)}</span><span class="p">kg</span></div>${ci?`<div class="cat-${ci.css}" style="text-align:right"><span class="badge"><i class="dot"></i>IMC ${nf(imc,1)}</span><br><small>${ci.n}</small></div>`:''}</div><small>${fmtF(cu.fecha,false)}</small>`;
+  }else $('#cardCuerpoMini').innerHTML='<h3>Peso e IMC</h3><p class="muted">Cargá tu peso en la pestaña <b>Cuerpo</b> para seguir tu evolución.</p>';
+  $('#guia').innerHTML=guiaHTML();actualizarBanner();
+}
+function calcIMC(p,a){return p&&a?Math.round(p/Math.pow(a/100,2)*10)/10:null}
+function guiaHTML(){return CATS.map(c=>`<div class="row cat-${c.css}" style="padding:7px 0;border-bottom:1px dashed var(--line);justify-content:space-between"><span class="badge"><i class="dot"></i>${c.nombre}</span><small style="text-align:right">${c.rango}</small></div>`).join('')}
+function distHTML(arr){
+  const cnt=[0,0,0,0,0];arr.forEach(m=>cnt[Math.max(sysLevel(m.max),diaLevel(m.min))]++);
+  const t=arr.length||1;
+  return `<div class="dist">${cnt.map((n,i)=>n?`<i class="cat-${CATS[i].css}" style="width:${n/t*100}%" title="${CATS[i].nombre}: ${n}"></i>`:'').join('')}</div>
+  <div class="legend">${cnt.map((n,i)=>`<span class="cat-${CATS[i].css}"><span class="dot"></span> ${CATS[i].nombre}: <b>${n}</b></span>`).join('')}</div>`;
+}
+
+/* ───────── 5. REPORTE ───────── */
+const R={modo:'mes',anio:new Date().getFullYear(),mes:new Date().getMonth()+1,desde:'',hasta:''};
+let repData=[];
+function initReporte(){
+  $$('#repModo button').forEach(b=>b.onclick=()=>{R.modo=b.dataset.m;renderReporte()});
+  $('#rAnio').onchange=e=>{R.anio=+e.target.value;renderReporte()};
+  $('#rMes').onchange=e=>{R.mes=+e.target.value;renderReporte()};
+  $('#rDesde').onchange=e=>{R.desde=e.target.value;renderReporte()};
+  $('#rHasta').onchange=e=>{R.hasta=e.target.value;renderReporte()};
+  $('#btnPrint').onclick=()=>window.print();
+  $('#btnCsv').onclick=exportCsv;
+  $('#rMes').innerHTML=MESES.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('');
+}
+function filtrarRep(){
+  let desde='0000-01-01',hasta='9999-12-31',label='Todo el historial';
+  if(R.modo==='mes'){desde=`${R.anio}-${pad(R.mes)}-01`;hasta=`${R.anio}-${pad(R.mes)}-31`;label=`${MESES[R.mes-1]} ${R.anio}`;}
+  else if(R.modo==='anio'){desde=`${R.anio}-01-01`;hasta=`${R.anio}-12-31`;label=`Año ${R.anio}`;}
+  else if(R.modo==='rango'){desde=R.desde||desde;hasta=R.hasta||hasta;label=(R.desde?fmtF(R.desde+' 00:00',false):'inicio')+' al '+(R.hasta?fmtF(R.hasta+' 00:00',false):'hoy');}
+  return {data:S.muestras.filter(m=>{const d=m.fecha.slice(0,10);return d>=desde&&d<=hasta}),label};
+}
+function renderReporte(){
+  const years=[...new Set(S.muestras.map(m=>+m.fecha.slice(0,4)).concat(new Date().getFullYear()))].sort((a,b)=>b-a);
+  if(!years.includes(R.anio))years.push(R.anio);
+  $('#rAnio').innerHTML=years.map(y=>`<option ${y===R.anio?'selected':''}>${y}</option>`).join('');
+  $('#rMes').value=R.mes;$('#rDesde').value=R.desde;$('#rHasta').value=R.hasta;
+  $$('#repModo button').forEach(b=>b.classList.toggle('on',b.dataset.m===R.modo));
+  $('#gAnio').classList.toggle('hide',!(R.modo==='mes'||R.modo==='anio'));
+  $('#gMes').classList.toggle('hide',R.modo!=='mes');
+  $('#gDesde').classList.toggle('hide',R.modo!=='rango');$('#gHasta').classList.toggle('hide',R.modo!=='rango');
+  const {data,label}=filtrarRep();repData=data;
+  const p=S.perfil,edad=edadDe(p.nacimiento),cu=S.cuerpo[S.cuerpo.length-1];
+  const cab=`<div class="card"><div class="row" style="justify-content:space-between"><div><h2 style="margin:0">Reporte de tensión arterial</h2><div class="muted">${esc(label)}</div></div><div style="text-align:right"><b>${esc(p.nombre||'Sin nombre')}</b><br><small>${edad!=null?edad+' años':''}${p.sexo?' · '+(p.sexo==='M'?'Masculino':'Femenino'):''}${cu?' · '+nf(cu.peso,1)+' kg':''}${cu&&cu.imc?' · IMC '+nf(cu.imc,1):''}</small></div></div></div>`;
+  if(!data.length){$('#repOut').innerHTML=cab+'<div class="card muted" style="margin-top:16px">No hay tomas en este período.</div>';return;}
+  const mx=data.map(m=>m.max),mn=data.map(m=>m.min),pl=data.filter(m=>m.pul).map(m=>m.pul);
+  const aM=Math.round(avg(mx)),aN=Math.round(avg(mn)),ca=clasificarPA(aM,aN);
+  const fuera=data.filter(m=>Math.max(sysLevel(m.max),diaLevel(m.min))>0).length;
+  const iMax=data.reduce((a,m)=>m.max>a.max?m:a,data[0]),iMin=data.reduce((a,m)=>m.max<a.max?m:a,data[0]);
+  const stats=`<div class="stats" style="margin-top:16px">
+    <div class="stat"><div class="k">Tomas</div><div class="v">${data.length}</div></div>
+    <div class="stat cat-${ca.css}"><div class="k">Promedio</div><div class="v">${aM}/${aN}</div><div class="s">${ca.nombre}</div></div>
+    <div class="stat cat-${CATS[sysLevel(iMax.max)].css}"><div class="k">Más alta</div><div class="v">${iMax.max}/${iMax.min}</div><div class="s">${fmtF(iMax.fecha)}</div></div>
+    <div class="stat cat-${CATS[sysLevel(iMin.max)].css}"><div class="k">Más baja</div><div class="v">${iMin.max}/${iMin.min}</div><div class="s">${fmtF(iMin.fecha)}</div></div>
+    <div class="stat"><div class="k">Pulso promedio</div><div class="v">${pl.length?Math.round(avg(pl)):'—'}</div><div class="s">ppm</div></div>
+    <div class="stat cat-${fuera?(fuera/data.length>.5?'rojo':'naranja'):'verde'}"><div class="k">Fuera de rango</div><div class="v">${Math.round(fuera/data.length*100)}%</div><div class="s">${fuera} de ${data.length}</div></div></div>`;
+  const rows=data.slice().reverse().map(m=>{const c=clasificarPA(m.max,m.min);
+    return `<tr><td>${fmtF(m.fecha)}</td><td class="num cat-${CATS[sysLevel(m.max)].css}" style="color:var(--c)">${m.max}</td><td class="num cat-${CATS[diaLevel(m.min)].css}" style="color:var(--c)">${m.min}</td><td class="num">${m.pul??'—'}</td><td class="cat-${c.css}"><span class="badge"><i class="dot"></i>${c.nombre}</span></td><td>${esc(m.notas)}</td><td class="no-print"><button class="del" data-del="muestras|${m.fila}|${m.fecha}" data-desc="Toma ${m.max}/${m.min} del ${fmtF(m.fecha)}" aria-label="Eliminar">${ICON('trash')}</button></td></tr>`}).join('');
+  $('#repOut').innerHTML=cab+stats+`
+   <div class="card" style="margin-top:16px"><h3>Distribución por categoría</h3>${distHTML(data)}</div>
+   <div class="card" style="margin-top:16px"><h3>Evolución</h3><canvas class="chart" id="chRep"></canvas>
+     <div class="legend" style="margin-top:8px"><span><span class="dot" style="background:#ef4444"></span> Máxima</span><span><span class="dot" style="background:#3b82f6"></span> Mínima</span><span>Líneas punteadas: 120 / 80</span></div></div>
+   <div class="card" style="margin-top:16px"><h3>Detalle de tomas</h3><div class="tscroll"><table><thead><tr><th>Fecha</th><th>Máx</th><th>Mín</th><th>Pulso</th><th>Estado</th><th>Nota</th><th class="no-print"></th></tr></thead><tbody>${rows}</tbody></table></div></div>
+   <p class="disclaimer">Generado el ${fmtF(hoyStr()+' 00:00',false)} · Herramienta de registro; no reemplaza la consulta médica.</p>`;
+  lineChart($('#chRep'),{labels:data.map(m=>fmtCorta(m.fecha)),series:[
+    {color:'#ef4444',data:mx,pc:data.map(m=>catColor(CATS[sysLevel(m.max)].css))},
+    {color:'#3b82f6',data:mn,pc:data.map(m=>catColor(CATS[diaLevel(m.min)].css))}],
+    refs:[{y:120,color:'#ca8a04'},{y:80,color:'#ca8a04'}],include:[60,130]});
+}
+function exportCsv(){
+  if(!repData.length)return toast('No hay datos para exportar','err');
+  const l=['Fecha;Máxima;Mínima;Pulsaciones;Categoría;Notas'].concat(repData.map(m=>[fmtF(m.fecha),m.max,m.min,m.pul??'',clasificarPA(m.max,m.min).nombre,'"'+String(m.notas).replace(/"/g,'""')+'"'].join(';')));
+  const blob=new Blob(['\ufeff'+l.join('\r\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`TuTension_${hoyStr()}.csv`;document.body.appendChild(a);a.click();a.remove();
+}
+
+/* ───────── 6. CUERPO (peso, IMC, cintura, grasa, músculo) ───────── */
+function initCuerpo(){
+  stPeso=buildStepper($('#mPeso'),{label:'Peso',sub:'Kilogramos',unit:'kg',min:20,max:400,step:0.1,def:70,dec:1,quick:[-1,1]});
+  $('#cFecha').value=hoyStr();
+  $('#btnCuerpo').onclick=guardarCuerpo;
+}
+async function guardarCuerpo(){
+  const peso=stPeso.get();if(peso==null)return toast('Ingresá el peso','err');
+  const btn=$('#btnCuerpo');btn.disabled=true;btn.textContent='Guardando…';
+  const v=id=>$('#'+id).value.trim().replace(',','.');
+  const prev=S.cuerpo[S.cuerpo.length-1];
+  try{
+    const r=await api('api_guardarCuerpo',{fecha:$('#cFecha').value||hoyStr(),peso,altura:v('cAltura')||S.perfil.altura||'',cintura:v('cCintura'),grasa:v('cGrasa'),musculo:v('cMusculo'),notas:$('#cNota').value});
+    S.cuerpo=r.cuerpo;S.perfil=r.perfil;['cCintura','cGrasa','cMusculo','cNota'].forEach(i=>$('#'+i).value='');
+    renderCuerpo();
+    const n=S.cuerpo.filter(x=>x.fecha.slice(0,10)===($('#cFecha').value||hoyStr())).pop()||S.cuerpo[S.cuerpo.length-1];
+    const ci=n.imc?catIMC(n.imc):null;
+    const dif=prev?+(peso-prev.peso).toFixed(1):null;
+    await openModal({css:ci?ci.css:'verde',icon:ci&&ci.css!=='verde'?'alert':'check',title:ci?ci.n:'Registro guardado',big:n.imc?`IMC ${nf(n.imc,1)}`:`${nf(peso,1)} kg`,lines:[dif!=null?`Cambio desde el registro anterior: <b>${dif>0?'+':''}${nf(dif,1)} kg</b>`:'Primer registro de peso: desde acá medimos tu evolución.']});
+  }catch(e){toast(errMsg(e),'err');}
+  finally{btn.disabled=false;btn.textContent='GUARDAR REGISTRO';}
+}
+function renderCuerpo(){
+  const arr=S.cuerpo,u=arr[arr.length-1];
+  if(stPeso&&stPeso.get()==null||(stPeso&&!stPeso._init)){stPeso.set(u?u.peso:70);stPeso._init=true;}
+  if(!$('#cAltura').value)$('#cAltura').value=S.perfil.altura||(u&&u.altura)||'';
+  if(!arr.length){$('#cuerpoOut').innerHTML='<div class="card"><h2>Evolución</h2><p class="muted">Sin registros todavía. Cada vez que cargues tu peso queda guardada la fecha para comparar a futuro.</p></div>';return;}
+  const prim=arr[0],prev=arr[arr.length-2];
+  const imc=u.imc||calcIMC(u.peso,u.altura||S.perfil.altura),ci=imc?catIMC(imc):null;
+  const dTot=+(u.peso-prim.peso).toFixed(1),dPrev=prev?+(u.peso-prev.peso).toFixed(1):null;
+  const sgn=v=>v>0?'+':'';const cl=v=>v>0?'up':v<0?'down':'';
+  const obj=parseFloat(S.perfil.pesoObjetivo);
+  const cr=riesgoCintura(u.cintura,S.perfil.sexo);
+  const stats=`<div class="card"><h2>Resumen</h2><div class="stats">
+    <div class="stat"><div class="k">Peso actual</div><div class="v">${nf(u.peso,1)} kg</div><div class="s">${fmtF(u.fecha,false)}</div></div>
+    <div class="stat ${ci?'cat-'+ci.css:''}"><div class="k">IMC</div><div class="v">${imc?nf(imc,1):'—'}</div><div class="s">${ci?ci.n:'Falta la altura'}</div></div>
+    <div class="stat"><div class="k">Desde el inicio</div><div class="v ${cl(dTot)}">${sgn(dTot)}${nf(dTot,1)}</div><div class="s">kg · desde ${fmtF(prim.fecha,false)}</div></div>
+    <div class="stat"><div class="k">Vs. anterior</div><div class="v ${dPrev!=null?cl(dPrev):''}">${dPrev!=null?sgn(dPrev)+nf(dPrev,1):'—'}</div><div class="s">kg</div></div>
+    ${!isNaN(obj)?`<div class="stat"><div class="k">Para el objetivo</div><div class="v">${nf(Math.abs(u.peso-obj),1)}</div><div class="s">kg ${u.peso>obj?'por bajar':u.peso<obj?'por subir':'¡objetivo logrado!'} (meta ${nf(obj,1)})</div></div>`:''}
+    ${u.cintura?`<div class="stat ${cr?'cat-'+cr.css:''}"><div class="k">Cintura</div><div class="v">${nf(u.cintura,0)} cm</div><div class="s">${cr?cr.n:'Definí el sexo en Perfil para evaluar el riesgo'}</div></div>`:''}
+    ${u.grasa?`<div class="stat"><div class="k">% Grasa</div><div class="v">${nf(u.grasa,1)}%</div></div>`:''}
+    ${u.musculo?`<div class="stat"><div class="k">% Músculo</div><div class="v">${nf(u.musculo,1)}%</div></div>`:''}
+    </div></div>`;
+  const chart=`<div class="card"><h3>Evolución del peso</h3><canvas class="chart" id="chPeso"></canvas></div>`;
+  const rows=arr.slice().reverse().map((m,i,a)=>{
+    const ant=a[i+1];const d=ant?+(m.peso-ant.peso).toFixed(1):null;const c=m.imc?catIMC(m.imc):null;
+    return `<tr><td>${fmtF(m.fecha,false)}</td><td class="num">${nf(m.peso,1)}</td><td class="num ${d!=null?cl(d):''}">${d!=null?sgn(d)+nf(d,1):'—'}</td><td class="num">${m.imc?nf(m.imc,1):'—'}</td><td>${c?`<span class="badge cat-${c.css}"><i class="dot"></i>${c.n}</span>`:''}</td><td>${m.cintura?nf(m.cintura,0):'—'}</td><td>${m.grasa?nf(m.grasa,1):'—'}</td><td>${m.musculo?nf(m.musculo,1):'—'}</td><td><button class="del" data-del="cuerpo|${m.fila}|${m.fecha}" data-desc="Registro de ${nf(m.peso,1)} kg del ${fmtF(m.fecha,false)}" aria-label="Eliminar">${ICON('trash')}</button></td></tr>`}).join('');
+  const tabla=`<div class="card"><h3>Historial</h3><div class="tscroll"><table><thead><tr><th>Fecha</th><th>Peso</th><th>Δ</th><th>IMC</th><th>Estado</th><th>Cintura</th><th>%Gr</th><th>%Mús</th><th></th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  $('#cuerpoOut').innerHTML=stats+chart+tabla;
+  lineChart($('#chPeso'),{labels:arr.map(m=>fmtCorta(m.fecha)),series:[{color:catColor('verde')==='#16a34a'?'#2563eb':'#60a5fa',data:arr.map(m=>m.peso)}],refs:!isNaN(obj)?[{y:obj,color:'#16a34a'}]:[],include:!isNaN(obj)?[obj]:[],dec:1});
+}
+
+/* ───────── 7. ANÁLISIS CLÍNICOS ───────── */
+let selMarc=null,extraN=0;
+function initAnalisis(){
+  $('#aFecha').value=hoyStr();
+  $('#btnExtra').onclick=()=>{extraN++;const d=document.createElement('div');d.className='fgrid';d.style.margin='8px 0';d.dataset.extra=extraN;
+    d.innerHTML='<input class="in" placeholder="Nombre del marcador" data-x="n"><input class="in" placeholder="Valor" inputmode="decimal" data-x="v"><input class="in" placeholder="Unidad" data-x="u">';$('#aExtras').appendChild(d);};
+  $('#btnAnalisis').onclick=guardarAnalisis;
+  $('#aForm').addEventListener('input',e=>{
+    const inp=e.target.closest('input[data-m]');if(!inp)return;
+    const m=S.marcadores.find(x=>x.id===inp.dataset.m),v=parseFloat(inp.value.replace(',','.')),st=$('#st-'+m.id);
+    const e2=inp.value.trim()===''?null:estadoMarcador(m,v);
+    inp.className='in'+(e2?' cat-'+e2.css:'');
+    st.className='st'+(e2?' cat-'+e2.css:'');st.textContent=e2?e2.n+(m.nota?' · '+m.nota:''):'';
+  });
+}
+function buildAnalisisForm(){
+  if($('#aForm').dataset.built)return;$('#aForm').dataset.built=1;
+  const grupos=[...new Set(S.marcadores.map(m=>m.grupo))];
+  $('#aForm').innerHTML=grupos.map(g=>`<div class="mgroup"><h3 style="margin-top:14px">${esc(g)}</h3>${S.marcadores.filter(m=>m.grupo===g).map(m=>{
+    const ref=m.min!=null&&m.max!=null?`${m.min}–${m.max}`:m.max!=null?`< ${m.max}`:`> ${m.min}`;
+    return `<div class="mrow"><div class="nm">${esc(m.nombre)}<small>Ref. ${ref} ${esc(m.unidad)}</small></div><input class="in" data-m="${m.id}" inputmode="decimal" placeholder="—"><div class="st" id="st-${m.id}"></div></div>`}).join('')}</div>`).join('');
+}
+async function guardarAnalisis(){
+  const items=[];
+  $$('#aForm input[data-m]').forEach(i=>{if(i.value.trim()==='')return;const m=S.marcadores.find(x=>x.id===i.dataset.m);items.push({nombre:m.nombre,valor:i.value.trim().replace(',','.'),unidad:m.unidad});});
+  $$('#aExtras [data-extra]').forEach(d=>{const n=$('[data-x=n]',d).value.trim(),v=$('[data-x=v]',d).value.trim().replace(',','.'),u=$('[data-x=u]',d).value.trim();if(n&&v)items.push({nombre:n,valor:v,unidad:u});});
+  if(!items.length)return toast('Cargá al menos un resultado','err');
+  const btn=$('#btnAnalisis');btn.disabled=true;btn.textContent='Guardando…';
+  try{
+    const r=await api('api_guardarAnalisis',{fecha:$('#aFecha').value||hoyStr(),notas:$('#aNota').value,items});
+    S.analisis=r.analisis;
+    const fuera=items.map(i=>{const m=S.marcadores.find(x=>x.nombre===i.nombre);const e=m?estadoMarcador(m,parseFloat(i.valor)):null;return e&&e.dir!=='ok'?{i,e,m}:null}).filter(Boolean);
+    $$('#aForm input[data-m]').forEach(i=>{i.value='';i.className='in'});$$('#aForm .st').forEach(s=>{s.textContent='';s.className='st'});$('#aExtras').innerHTML='';$('#aNota').value='';
+    renderAnalisis();
+    if(!fuera.length)toast(`✔ ${items.length} resultado(s) guardados · todo en rango`,'ok');
+    else{const peor=fuera.reduce((a,b)=>['verde','amarillo','naranja','rojo'].indexOf(b.e.css)>['verde','amarillo','naranja','rojo'].indexOf(a.e.css)?b:a);
+      await openModal({css:peor.e.css,icon:'alert',title:`${fuera.length} resultado(s) fuera de rango`,lines:fuera.map(f=>`<b>${esc(f.i.nombre)}</b>: ${esc(f.i.valor)} ${esc(f.i.unidad)} · ${f.e.n}`).concat(['<small>Comentalo con tu médico. Los rangos son orientativos.</small>'])});}
+  }catch(e){toast(errMsg(e),'err');}
+  finally{btn.disabled=false;btn.textContent='GUARDAR RESULTADOS';}
+}
+function renderAnalisis(){
+  buildAnalisisForm();
+  const out=$('#analisisOut'),arr=S.analisis;
+  if(!arr.length){out.innerHTML='<div class="card"><h2>Resumen</h2><p class="muted">Sin resultados cargados. Podés sumar glucemia, HbA1c, colesterol, triglicéridos, función renal, orina y más.</p></div>';return;}
+  const por={};arr.forEach(a=>{(por[a.marcador]=por[a.marcador]||[]).push(a)});
+  const nombres=Object.keys(por).sort();
+  const filas=nombres.map(n=>{
+    const h=por[n],u=h[h.length-1],p=h[h.length-2],m=S.marcadores.find(x=>x.nombre===n),e=m?estadoMarcador(m,u.valor):null;
+    const d=p?+(u.valor-p.valor).toFixed(2):null;
+    const ref=m?(m.min!=null&&m.max!=null?`${m.min}–${m.max}`:m.max!=null?`< ${m.max}`:`> ${m.min}`):'—';
+    return `<tr class="click" data-marc="${esc(n)}"><td><b>${esc(n)}</b></td><td class="num ${e?'cat-'+e.css:''}" style="color:var(--c,inherit)">${nfa(u.valor)} <small>${esc(u.unidad)}</small></td><td>${e?`<span class="badge cat-${e.css}"><i class="dot"></i>${e.n}</span>`:'—'}</td><td><small>${ref}</small></td><td class="num">${d!=null?(d>0?'▲ +':d<0?'▼ ':'= ')+nfa(d):'—'}</td><td><small>${fmtF(u.fecha,false)}</small></td></tr>`}).join('');
+  let det='';
+  if(selMarc&&por[selMarc]){
+    const h=por[selMarc],m=S.marcadores.find(x=>x.nombre===selMarc);
+    det=`<div class="card"><h3>${esc(selMarc)} · evolución</h3>${h.length>1?'<canvas class="chart" id="chMarc"></canvas>':'<p class="muted">Cargá otro resultado para ver la evolución.</p>'}
+      <div class="tscroll"><table><thead><tr><th>Fecha</th><th>Valor</th><th>Estado</th><th></th></tr></thead><tbody>${h.slice().reverse().map(a=>{const e=m?estadoMarcador(m,a.valor):null;return `<tr><td>${fmtF(a.fecha,false)}</td><td class="num">${nfa(a.valor)} <small>${esc(a.unidad)}</small></td><td>${e?`<span class="badge cat-${e.css}"><i class="dot"></i>${e.n}</span>`:''}</td><td><button class="del" data-del="analisis|${a.fila}|${a.fecha}" data-desc="${esc(a.marcador)}: ${a.valor} del ${fmtF(a.fecha,false)}" aria-label="Eliminar">${ICON('trash')}</button></td></tr>`}).join('')}</tbody></table></div></div>`;
+  }
+  out.innerHTML=`<div class="card"><h2>Último resultado de cada marcador</h2><p class="muted" style="font-size:13px;margin-top:-6px">Tocá un marcador para ver su evolución.</p><div class="tscroll"><table><thead><tr><th>Marcador</th><th>Último</th><th>Estado</th><th>Ref.</th><th>Cambio</th><th>Fecha</th></tr></thead><tbody>${filas}</tbody></table></div></div>${det}`;
+  $$('#analisisOut tr[data-marc]').forEach(r=>r.onclick=()=>{selMarc=r.dataset.marc;renderAnalisis();});
+  if(selMarc&&por[selMarc]&&por[selMarc].length>1){const h=por[selMarc],m=S.marcadores.find(x=>x.nombre===selMarc);
+    const refs=[];if(m&&m.max!=null)refs.push({y:m.max,color:'#ea580c'});if(m&&m.min!=null&&m.min>0)refs.push({y:m.min,color:'#ea580c'});
+    lineChart($('#chMarc'),{labels:h.map(a=>fmtCorta(a.fecha)),series:[{color:'#2563eb',data:h.map(a=>a.valor),pc:h.map(a=>{const e=m?estadoMarcador(m,a.valor):null;return e?catColor(e.css):'#2563eb'})}],refs,include:refs.map(r=>r.y),dec:1});}
+}
+
+/* ───────── 8. PERFIL ───────── */
+function initPerfil(){
+  $('#pNac').addEventListener('input',()=>{const e=edadDe($('#pNac').value);$('#pEdad').value=e!=null?e+' años':''});
+  $('#btnPerfil').onclick=async()=>{
+    const btn=$('#btnPerfil');btn.disabled=true;btn.textContent='Guardando…';
+    try{
+      const r=await api('api_guardarPerfil',{nombre:$('#pNombre').value.trim(),nacimiento:$('#pNac').value,sexo:$('#pSexo').value,altura:$('#pAltura').value.trim().replace(',','.'),pesoObjetivo:$('#pObj').value.trim().replace(',','.'),medico:$('#pMedico').value.trim(),medicacion:$('#pMed').value.trim(),notas:$('#pNotas').value.trim()});
+      S.perfil=r.perfil;toast('Perfil guardado','ok');
+    }catch(e){toast(errMsg(e),'err');}
+    finally{btn.disabled=false;btn.textContent='Guardar perfil';}
+  };
+  $$('#segTema button').forEach(b=>b.onclick=()=>applyTheme(b.dataset.v));
+  $$('#segVista button').forEach(b=>b.onclick=()=>setVista(b.dataset.v));
+  initDatos();
+}
+function renderPerfil(){
+  const p=S.perfil;
+  if(!$('#pNombre').dataset.filled){
+    $('#pNombre').value=p.nombre||'';$('#pNac').value=p.nacimiento||'';$('#pSexo').value=p.sexo||'';$('#pAltura').value=p.altura||'';$('#pObj').value=p.pesoObjetivo||'';$('#pMedico').value=p.medico||'';$('#pMed').value=p.medicacion||'';$('#pNotas').value=p.notas||'';
+    $('#pNombre').dataset.filled=1;
+  }
+  const e=edadDe($('#pNac').value);$('#pEdad').value=e!=null?e+' años':'';
+  $('#guia2').innerHTML=guiaHTML();renderDatosInfo();
+}
+
+
+/* ───────── 8b. MIS DATOS (exportar / importar / borrar) ───────── */
+function descargar(nombre,contenido,tipo){
+  const blob=new Blob([contenido],{type:tipo});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=nombre;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+function exportarJSON(){
+  try{
+    descargar(`TuTension_copia_${hoyStr()}.json`,JSON.stringify(armarExport(),null,1),'application/json');
+    tx(d=>{d.meta.lastExport=Date.now()});
+    toast('Copia exportada ✔','ok');renderDatosInfo();renderInicio();
+  }catch(e){toast(errMsg(e),'err')}
+}
+async function importarJSON(file){
+  if(!file)return;
+  let j;try{j=JSON.parse(await file.text())}catch(e){return toast('El archivo no es un JSON válido','err')}
+  if(!j||j.app!=='TuTension'||!j.datos)return toast('Ese archivo no parece una copia de TuTensión','err');
+  const imp=limpiarImport(j.datos);
+  const tot=imp.muestras.length+imp.cuerpo.length+imp.analisis.length;
+  if(!tot&&!Object.keys(imp.perfil).length)return toast('La copia no tiene datos válidos','err');
+  const modo=await openModal({css:'amarillo',icon:'alert',title:'Importar copia',lines:[
+    `Contiene <b>${imp.muestras.length}</b> tomas, <b>${imp.cuerpo.length}</b> registros de peso y <b>${imp.analisis.length}</b> resultados de análisis.${imp.omitidos?` <small>(${imp.omitidos} filas inválidas se omiten)</small>`:''}`,
+    '<b>Combinar</b> suma lo que falte sin duplicar. <b>Reemplazar</b> borra lo actual y deja solo la copia.'],
+    buttons:[{t:'Cancelar',v:null},{t:'Combinar',v:'merge',cls:'primary'},{t:'Reemplazar',v:'replace',cls:'danger'}]});
+  if(!modo)return;
+  try{const n=aplicarImport(imp,modo);recargarTodo();toast(modo==='merge'?`Importado: ${n} registros nuevos`:'Datos reemplazados','ok')}
+  catch(e){toast(errMsg(e),'err')}
+}
+async function borrarTodo(){
+  const ok=await openModal({css:'rojo',icon:'trash',title:'¿Borrar todos los datos?',lines:['Se eliminan tomas, peso, análisis y perfil de este navegador. <b>No se puede deshacer.</b>','Si no exportaste una copia, perdés todo.'],buttons:[{t:'Cancelar',v:false},{t:'Borrar todo',v:true,cls:'danger'}]});
+  if(!ok)return;
+  try{tx(d=>{d.perfil={};d.muestras=[];d.cuerpo=[];d.analisis=[];d.meta={}});recargarTodo();toast('Datos borrados','ok')}
+  catch(e){toast(errMsg(e),'err')}
+}
+function recargarTodo(){
+  Object.assign(S,LOCAL.api_init());
+  const f=$('#pNombre');if(f)delete f.dataset.filled;
+  if(stPeso)stPeso._init=false;
+  const u=S.muestras[S.muestras.length-1];
+  if(stS){stS.set(u?u.max:120);stD.set(u?u.min:80);stP.set(u&&u.pul?u.pul:70)}
+  renderActual();
+}
+function renderDatosInfo(){
+  const d=dbLoad(),el=$('#datosInfo');if(!el)return;
+  const ult=d.meta.lastExport?new Date(d.meta.lastExport):null;
+  el.innerHTML=`<div class="k">En este navegador</div><div class="s" style="font-size:15px;color:var(--ink)"><b>${d.muestras.length}</b> tomas · <b>${d.cuerpo.length}</b> pesos · <b>${d.analisis.length}</b> resultados</div><div class="s">Última copia exportada: ${ult?fmtF(`${ult.getFullYear()}-${pad(ult.getMonth()+1)}-${pad(ult.getDate())} ${pad(ult.getHours())}:${pad(ult.getMinutes())}`):'nunca'}</div>`;
+}
+function initDatos(){
+  $('#btnExp').onclick=exportarJSON;
+  $('#btnImp').onclick=()=>$('#fileImp').click();
+  $('#fileImp').onchange=e=>{importarJSON(e.target.files[0]);e.target.value=''};
+  $('#btnBorrar').onclick=borrarTodo;
+  $('#bkNow').onclick=exportarJSON;
+}
+function actualizarBanner(){
+  const d=dbLoad(),tot=d.muestras.length+d.cuerpo.length+d.analisis.length,last=d.meta.lastExport||0;
+  $('#bkBanner').classList.toggle('hide',!(tot>0&&(last?(Date.now()-last)/864e5>30:tot>=5)));
+}
+
+/* ───────── 9. ARRANQUE ───────── */
+async function boot(){
+  paintIcons();
+  const th=lsGet('tt_theme')||(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+  vistaPref=lsGet('tt_view')||'auto';
+  document.documentElement.dataset.theme=th;
+  $$('.navbtn').forEach(b=>b.onclick=()=>go(b.dataset.p));
+  $('#btnTheme').onclick=()=>applyTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
+  $('#btnView').onclick=()=>setVista({auto:'mobile',mobile:'desktop',desktop:'auto'}[vistaPref]);
+  let rz;window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(applyView,150)});
+  $('#modal').addEventListener('click',e=>{if(e.target.id==='modal'){/* se cierra solo con los botones */}});
+  try{
+    const r=await api('api_init');
+    Object.assign(S,r);
+  }catch(e){
+    $('#loading').innerHTML=`<div style="max-width:420px;padding:20px;text-align:center"><h2>No se pudo cargar</h2><p class="muted">${esc(errMsg(e))}</p></div>`;return;
+  }
+  initToma();initReporte();initCuerpo();initAnalisis();initPerfil();
+  applyTheme(th);applyView();
+  $('#loading').style.display='none';
+  try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
+  try{if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
+}
+boot();
+</script>
+</body>
+</html>
